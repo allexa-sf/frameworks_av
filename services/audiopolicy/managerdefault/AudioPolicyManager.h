@@ -306,6 +306,20 @@ public:
             volumeGroup = mEngine->getVolumeGroupForAttributes(aa.getAttributes());
             return volumeGroup != VOLUME_GROUP_NONE ? NO_ERROR : BAD_VALUE;
         }
+        // Notify the policy client of any change of device state with AUDIO_IO_HANDLE_NONE,
+        // so that the client interprets it as global to audio hardware interfaces.
+        // It can give a chance to HAL implementer to retrieve dynamic capabilities associated
+        // to this device for example.
+        // TODO avoid opening stream to retrieve capabilities of a profile.
+        virtual void broadcastDeviceConnectionState(const sp<DeviceDescriptor> &device,
+                                            audio_policy_dev_state_t state);
+
+        // updates device caching and output for streams that can influence the
+        //    routing of notifications
+        virtual void handleNotificationRoutingForStream(audio_stream_type_t stream);
+
+        virtual void setEngineDeviceConnectionState(const sp<DeviceDescriptor> device,
+                                      audio_policy_dev_state_t state);
 
 protected:
         // A constructor that allows more fine-grained control over initialization process,
@@ -779,17 +793,7 @@ private:
         void updateAudioProfiles(const sp<DeviceDescriptor>& devDesc, audio_io_handle_t ioHandle,
                 AudioProfileVector &profiles);
 
-        // Notify the policy client of any change of device state with AUDIO_IO_HANDLE_NONE,
-        // so that the client interprets it as global to audio hardware interfaces.
-        // It can give a chance to HAL implementer to retrieve dynamic capabilities associated
-        // to this device for example.
-        // TODO avoid opening stream to retrieve capabilities of a profile.
-        void broadcastDeviceConnectionState(const sp<DeviceDescriptor> &device,
-                                            audio_policy_dev_state_t state);
 
-        // updates device caching and output for streams that can influence the
-        //    routing of notifications
-        void handleNotificationRoutingForStream(audio_stream_type_t stream);
         uint32_t curAudioPortGeneration() const { return mAudioPortGeneration; }
         // internal method, get audio_attributes_t from either a source audio_attributes_t
         // or audio_stream_type_t, respectively.
@@ -850,8 +854,6 @@ private:
                                              const char *device_name,
                                              audio_format_t encodedFormat);
 
-        void setEngineDeviceConnectionState(const sp<DeviceDescriptor> device,
-                                      audio_policy_dev_state_t state);
 
         void updateMono(audio_io_handle_t output) {
             AudioParameter param;
